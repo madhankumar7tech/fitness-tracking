@@ -1,0 +1,21 @@
+# Exclude target build folder
+target/
+
+# Exclude local database and data directory
+data/
+*.db
+*.db.mv
+*.db.trace
+
+# Exclude git & configuration files
+.git/
+.github/
+.vscode/
+.gitignore
+
+# Exclude documentation files
+*.md
+
+# Exclude Docker configs themselves
+Dockerfile
+.dockerignore
