@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Management System - Dashboard</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Immediate Redirect Guard -->
+    <script>
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.replace('/login');
+        }
+    </script>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-dumbbell"></i>
+            <span>APEX FITNESS</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="/dashboard" class="sidebar-link active">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="/members" class="sidebar-link">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Members</span>
+                </a>
+            </li>
+            <li>
+                <a href="/plans" class="sidebar-link">
+                    <i class="fa-solid fa-address-card"></i>
+                    <span>Membership Plans</span>
+                </a>
+            </li>
+            <li>
+                <a href="/payments" class="sidebar-link">
+                    <i class="fa-solid fa-credit-card"></i>
+                    <span>Payments</span>
+                </a>
+            </li>
+            <li>
+                <a href="/schedules" class="sidebar-link">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Workouts</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+        <!-- Header -->
+        <header class="top-header">
+            <div class="page-title">
+                <h1>Dashboard</h1>
+                <p>Welcome back, Administrator. Here's today's overview.</p>
+            </div>
+            <div class="user-profile">
+                <div class="user-profile-info">
+                    <div class="user-profile-name">Admin Portal</div>
+                    <div class="user-profile-role">Manager</div>
+                </div>
+                <div class="metric-icon" style="width: 32px; height: 32px; border-radius: 50%; font-size: 0.9rem;">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-info">
+                    <h3>Total Members</h3>
+                    <div class="metric-value" id="stat-total-members">0</div>
+                </div>
+                <div class="metric-icon blue">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-info">
+                    <h3>Active Members</h3>
+                    <div class="metric-value" id="stat-active-members">0</div>
+                </div>
+                <div class="metric-icon green">
+                    <i class="fa-solid fa-user-check"></i>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-info">
+                    <h3>Total Revenue</h3>
+                    <div class="metric-value" id="stat-total-revenue">$0.00</div>
+                </div>
+                <div class="metric-icon gold">
+                    <i class="fa-solid fa-dollar-sign"></i>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-info">
+                    <h3>Weekly Workouts</h3>
+                    <div class="metric-value" id="stat-total-schedules">0</div>
+                </div>
+                <div class="metric-icon purple">
+                    <i class="fa-solid fa-calendar-days"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Left Side: Analytics & Plans -->
+            <div class="panel chart-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <h2>Membership Plan Popularity</h2>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="planPopularityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Right Side: Recent Payments & Actions -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <h2>Recent Payments</h2>
+                    </div>
+                    <a href="/payments" class="btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">View All</a>
+                </div>
+                <div class="recent-activity-list" id="recent-payments-list">
+                    <!-- Loaded dynamically via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Action Shortcuts -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <h2>Quick Actions</h2>
+                </div>
+            </div>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a href="/members?action=register" class="btn-primary">
+                    <i class="fa-solid fa-user-plus"></i> Register New Member
+                </a>
+                <a href="/payments?action=record" class="btn-outline">
+                    <i class="fa-solid fa-receipt"></i> Record Fee Payment
+                </a>
+                <a href="/schedules?action=create" class="btn-outline">
+                    <i class="fa-solid fa-circle-plus"></i> Create Workout Class
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Master Scripts -->
+    <script type="module" src="/js/app.js"></script>
+    <script>
+        // Specific logic for Dashboard statistics loading and rendering charts
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadDashboardStats();
+        });
+
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+
+                // Set numbers
+                document.getElementById('stat-total-members').textContent = data.totalMembers;
+                document.getElementById('stat-active-members').textContent = data.activeMembers;
+                document.getElementById('stat-total-revenue').textContent = '$' + data.totalRevenue.toFixed(2);
+                document.getElementById('stat-total-schedules').textContent = data.totalSchedules;
+
+                // Render Plan Popularity Chart
+                const popularityData = data.planPopularity || {};
+                const labels = Object.keys(popularityData);
+                const counts = Object.values(popularityData);
+
+                if (labels.length > 0) {
+                    const ctx = document.getElementById('planPopularityChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: counts,
+                                backgroundColor: [
+                                    'rgba(0, 242, 254, 0.7)',
+                                    'rgba(0, 230, 118, 0.7)',
+                                    'rgba(240, 147, 251, 0.7)',
+                                    'rgba(255, 179, 0, 0.7)'
+                                ],
+                                borderColor: 'rgba(15, 17, 36, 1)',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        color: '#9aa0c2',
+                                        font: {
+                                            family: 'Inter'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    document.getElementById('planPopularityChart').parentElement.innerHTML = 
+                        '<p style="color: #646a8a; text-align: center; margin-top: 5rem;">No plan subscription data available.</p>';
+                }
+
+                // Load Recent Payments
+                const payResponse = await fetch('/api/payments');
+                const payments = await payResponse.json();
+                const recentPaymentsList = document.getElementById('recent-payments-list');
+                recentPaymentsList.innerHTML = '';
+
+                // Display first 4 payments
+                const slice = payments.slice(0, 4);
+                if (slice.length === 0) {
+                    recentPaymentsList.innerHTML = '<p style="color: #646a8a; text-align: center; padding: 1rem;">No recent payments recorded.</p>';
+                }
+                slice.forEach(p => {
+                    const item = document.createElement('div');
+                    item.className = 'activity-item';
+                    item.innerHTML = `
+                        <div class="activity-badge" style="background: rgba(0, 230, 118, 0.1); color: #00e676;">
+                            <i class="fa-solid fa-money-bill-transfer"></i>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">${p.member.name}</div>
+                            <div class="activity-subtitle">Paid: $${p.amount.toFixed(2)} via ${p.paymentMethod}</div>
+                        </div>
+                        <div>
+                            <div class="activity-time">${p.paymentDate}</div>
+                            <span class="badge ${p.status.toLowerCase() === 'paid' ? 'paid' : 'pending'}" style="font-size: 0.7rem; padding: 0.15rem 0.5rem; margin-top: 0.25rem; display: block; text-align: center;">${p.status}</span>
+                        </div>
+                    `;
+                    recentPaymentsList.appendChild(item);
+                });
+
+            } catch (error) {
+                console.error("Error loading dashboard statistics:", error);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apex Fitness - Login</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Style CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Immediate Redirect Guard -->
+    <script>
+        if (localStorage.getItem('isLoggedIn') === 'true') {
+            window.location.replace('/dashboard');
+        }
+    </script>
+</head>
+<body class="login-body">
+    <!-- Background glowing orbs -->
+    <div class="login-bg-glow"></div>
+    <div class="login-bg-glow-2"></div>
+
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Brand Logo -->
+            <div class="login-logo">
+                <i class="fa-solid fa-dumbbell"></i>
+                <span>APEX FITNESS</span>
+            </div>
+            <p class="login-subtitle">Gym Management Portal</p>
+
+            <!-- Authentication Tabs -->
+            <div class="login-tabs">
+                <div class="login-tab active" id="tab-login">Login</div>
+                <div class="login-tab" id="tab-register">Register</div>
+            </div>
+
+            <!-- Messages/Alerts Banner -->
+            <div class="login-alert" id="auth-alert">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span id="auth-alert-msg"></span>
+            </div>
+
+            <!-- Login Form -->
+            <form id="auth-form">
+                <div class="form-group">
+                    <label class="form-label" for="auth-email">Email Address</label>
+                    <input type="email" id="auth-email" class="form-control" placeholder="admin@apexfitness.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="auth-password">Password</label>
+                    <input type="password" id="auth-password" class="form-control" placeholder="••••••••" required minlength="6">
+                </div>
+
+                <div class="form-group" id="confirm-password-group" style="display: none;">
+                    <label class="form-label" for="auth-confirm-password">Confirm Password</label>
+                    <input type="password" id="auth-confirm-password" class="form-control" placeholder="••••••••" minlength="6">
+                </div>
+
+                <button type="submit" class="btn-primary btn-submit" id="btn-submit">
+                    <span id="btn-text">Sign In</span>
+                    <i class="fa-solid fa-arrow-right" id="btn-icon"></i>
+                </button>
+            </form>
+
+            <div class="login-footer-text">
+                &copy; 2026 Apex Fitness. All rights reserved.
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK & Controller logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBPMrRU6bBs8b4usgXHPZ7xY7MC0zVhTps",
+            authDomain: "fitness-tracker-a126e.firebaseapp.com",
+            projectId: "fitness-tracker-a126e",
+            storageBucket: "fitness-tracker-a126e.firebasestorage.app",
+            messagingSenderId: "326671169730",
+            appId: "1:326671169730:web:35ba17b5b85a0f9358a35b",
+            measurementId: "G-BE9D3N8Q0K"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Keep track of active state
+        let isLoginMode = true;
+
+        const tabLogin = document.getElementById('tab-login');
+        const tabRegister = document.getElementById('tab-register');
+        const confirmPasswordGroup = document.getElementById('confirm-password-group');
+        const confirmPasswordInput = document.getElementById('auth-confirm-password');
+        const authForm = document.getElementById('auth-form');
+        const emailInput = document.getElementById('auth-email');
+        const passwordInput = document.getElementById('auth-password');
+        const btnSubmit = document.getElementById('btn-submit');
+        const btnText = document.getElementById('btn-text');
+        const btnIcon = document.getElementById('btn-icon');
+        const authAlert = document.getElementById('auth-alert');
+        const authAlertMsg = document.getElementById('auth-alert-msg');
+
+        // Toggle Tabs
+        tabLogin.addEventListener('click', () => {
+            if (isLoginMode) return;
+            isLoginMode = true;
+            tabLogin.classList.add('active');
+            tabRegister.classList.remove('active');
+            confirmPasswordGroup.style.display = 'none';
+            confirmPasswordInput.removeAttribute('required');
+            btnText.textContent = "Sign In";
+            btnIcon.className = "fa-solid fa-arrow-right";
+            hideAlert();
+        });
+
+        tabRegister.addEventListener('click', () => {
+            if (!isLoginMode) return;
+            isLoginMode = false;
+            tabRegister.classList.add('active');
+            tabLogin.classList.remove('active');
+            confirmPasswordGroup.style.display = 'block';
+            confirmPasswordInput.setAttribute('required', 'required');
+            btnText.textContent = "Create Account";
+            btnIcon.className = "fa-solid fa-user-plus";
+            hideAlert();
+        });
+
+        // Auth action handler
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAlert();
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            // Loading state
+            btnSubmit.disabled = true;
+            btnText.textContent = isLoginMode ? "Signing In..." : "Creating Account...";
+            
+            try {
+                if (isLoginMode) {
+                    // Sign in
+                    await signInWithEmailAndPassword(auth, email, password);
+                    localStorage.setItem('isLoggedIn', 'true');
+                    window.location.replace('/dashboard');
+                } else {
+                    // Sign up
+                    const confirmPassword = confirmPasswordInput.value;
+                    if (password !== confirmPassword) {
+                        throw new Error("Passwords do not match");
+                    }
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    showAlert("success", "Account created successfully! Logging you in...");
+                    localStorage.setItem('isLoggedIn', 'true');
+                    setTimeout(() => {
+                        window.location.replace('/dashboard');
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error("Firebase auth error:", error);
+                let message = error.message;
+                if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                    message = "Invalid email address or password.";
+                } else if (error.code === 'auth/email-already-in-use') {
+                    message = "This email is already registered.";
+                } else if (error.code === 'auth/invalid-email') {
+                    message = "Please enter a valid email address.";
+                } else if (error.code === 'auth/weak-password') {
+                    message = "Password should be at least 6 characters long.";
+                }
+                showAlert("danger", message);
+                btnSubmit.disabled = false;
+                btnText.textContent = isLoginMode ? "Sign In" : "Create Account";
+            }
+        });
+
+        // Watch Auth State to auto-redirect if already signed in
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                localStorage.setItem('isLoggedIn', 'true');
+                window.location.replace('/dashboard');
+            }
+        });
+
+        function showAlert(type, message) {
+            authAlert.className = `login-alert ${type}`;
+            authAlertMsg.textContent = message;
+            authAlert.style.display = 'flex';
+            if (type === 'danger') {
+                authAlert.querySelector('i').className = 'fa-solid fa-circle-exclamation';
+            } else {
+                authAlert.querySelector('i').className = 'fa-solid fa-circle-check';
+            }
+        }
+
+        function hideAlert() {
+            authAlert.className = 'login-alert';
+            authAlert.style.display = 'none';
+        }
+    </script>
+</body>
+</html>

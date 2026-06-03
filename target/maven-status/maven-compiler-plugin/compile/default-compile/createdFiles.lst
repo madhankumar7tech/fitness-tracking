@@ -1,0 +1,12 @@
+com\gym\model\MembershipPlan.class
+com\gym\model\Member.class
+com\gym\repository\PaymentRepository.class
+com\gym\repository\MembershipPlanRepository.class
+com\gym\repository\WorkoutScheduleRepository.class
+com\gym\repository\MemberRepository.class
+com\gym\controller\GymController.class
+com\gym\GymApplication.class
+com\gym\model\Payment.class
+com\gym\controller\GymApiController.class
+com\gym\service\DatabaseSeeder.class
+com\gym\model\WorkoutSchedule.class
